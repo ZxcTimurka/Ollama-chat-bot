@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Chat Interface</title>
+    <style>
+        :root {
+            --primary-100: #A16B4D;
+            --primary-200: #d49979;
+            --primary-300: #fffdda;
+            --accent-100: #D9A17C;
+            --accent-200: #744726;
+            --text-100: #4D4D4D;
+            --text-200: #797979;
+            --bg-100: #F0EDE5;
+            --bg-200: #e6e3db;
+            --bg-300: #bdbbb3;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: var(--bg-100);
+            color: var(--text-100);
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary-200);
+        }
+
+        #chat-container {
+            width: 500px;
+            margin: 20px auto;
+            background-color: var(--bg-200);
+            border: 2px solid var(--primary-100);
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            padding: 15px;
+        }
+
+        .message {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .user-message {
+            background-color: var(--accent-100);
+            color: var(--text-100);
+        }
+
+        .ai-message {
+            background-color: var(--primary-100);
+            color: var(--text-100);
+        }
+
+        #user-message {
+            width: calc(100% - 80px);
+            padding: 10px;
+            border: 1px solid var(--bg-300);
+            border-radius: 5px;
+            background-color: var(--bg-100);
+            color: var(--text-200);
+        }
+
+        #send-button {
+            padding: 10px 20px;
+            margin-left: 10px;
+            background-color: var(--primary-100);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        #send-button:hover {
+            background-color: var(--primary-200);
+        }
+
+        #settings-button {
+            display: block;
+            width: 150px;
+            margin: 20px auto;
+            padding: 10px;
+            background-color: var(--accent-200);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        #settings-button:hover {
+            background-color: var(--accent-100);
+        }
+
+        #settings-window {
+            display: none;
+            width: 500px;
+            margin: 20px auto;
+            background-color: var(--bg-200);
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid var(--primary-100);
+        }
+
+        #save-settings {
+            padding: 10px 20px;
+            background-color: var(--accent-100);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        #save-settings:hover {
+            background-color: var(--accent-200);
+        }
+
+        input[type="text"], select {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid var(--bg-300);
+            border-radius: 5px;
+            background-color: var(--bg-100);
+            color: var(--text-200);
+        }
+    </style>
+</head>
+<body>
+    <h1>AI Chat Interface</h1>
+    <div id="chat-container">
+        <div id="chat-log"></div>
+        <input type="text" id="user-message" placeholder="Enter your message">
+        <button id="send-button">Send</button>
+    </div>
+
+    <button id="settings-button">Settings</button>
+
+    <div id="settings-window">
+        <h2>Settings</h2>
+        <label for="provider">Provider:</label>
+        <select id="provider">
+            <option value="Ollama">Ollama</option>
+            <option value="OpenAI">OpenAI</option>
+        </select><br><br>
+        <div id="openai-settings" style="display:none;">
+            <label for="openai-model-name">Model Name:</label>
+            <input type="text" id="openai-model-name" value="{{ openai_model_name }}"><br><br>
+            <label for="openai-base-url">Base URL:</label>
+            <input type="text" id="openai-base-url" value="{{ openai_base_url }}"><br><br>
+            <label for="openai-api-key">API Key:</label>
+            <input type="text" id="openai-api-key" value="{{ openai_api_key }}"><br><br>
+        </div>
+        <div id="ollama-settings">
+            <label for="ollama-model-name">Model Name:</label>
+            <input type="text" id="ollama-model-name" value="{{ ollama_model_name }}"><br><br>
+        </div>
+        <button id="save-settings">Save Settings</button>
+    </div>
+
+    <script>
+        const chatLog = document.getElementById('chat-log');
+        const userMessageInput = document.getElementById('user-message');
+        const sendButton = document.getElementById('send-button');
+        const settingsButton = document.getElementById('settings-button');
+        const settingsWindow = document.getElementById('settings-window');
+        const providerSelect = document.getElementById('provider');
+        const openaiSettings = document.getElementById('openai-settings');
+        const ollamaSettings = document.getElementById('ollama-settings');
+        const saveSettingsButton = document.getElementById('save-settings');
+
+        settingsButton.addEventListener('click', () => {
+            settingsWindow.style.display = 'block';
+        });
+
+        providerSelect.addEventListener('change', () => {
+            openaiSettings.style.display = providerSelect.value === 'OpenAI' ? 'block' : 'none';
+            ollamaSettings.style.display = providerSelect.value === 'Ollama' ? 'block' : 'none';
+        });
+
+        sendButton.addEventListener('click', sendMessage);
+
+        function sendMessage() {
+            const userMessage = userMessageInput.value;
+            if (userMessage.trim() === '') return;
+
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', 'user-message');
+            messageDiv.textContent = userMessage;
+            chatLog.appendChild(messageDiv);
+            userMessageInput.value = '';
+
+            fetch('/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `user_message=${encodeURIComponent(userMessage)}&provider=${providerSelect.value}&model_name=${providerSelect.value === 'OpenAI' ? document.getElementById('openai-model-name').value : document.getElementById('ollama-model-name').value}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    const aiMessageDiv = document.createElement('div');
+                    aiMessageDiv.classList.add('message', 'ai-message');
+                    aiMessageDiv.textContent = data.ai_response;
+                    chatLog.appendChild(aiMessageDiv);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred.');
+            });
+        }
+    </script>
+</body>
+</html>
